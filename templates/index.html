@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem AI de Siguranță</title>
+
+    <style>
+        :root {
+            --bg-main: #080b12;
+            --bg-card: rgba(255, 255, 255, 0.08);
+            --bg-card-strong: rgba(255, 255, 255, 0.12);
+            --text-main: #f4f7fb;
+            --text-muted: #aab4c3;
+            --green: #22c55e;
+            --green-dark: #14532d;
+            --red: #ef4444;
+            --red-dark: #7f1d1d;
+            --yellow: #facc15;
+            --blue: #38bdf8;
+            --border: rgba(255, 255, 255, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.14), transparent 35%),
+                var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            padding: 32px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1.4fr 0.9fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(18px);
+            overflow: hidden;
+        }
+
+        .camera-panel {
+            padding: 20px;
+        }
+
+        .side-panel {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            margin-bottom: 18px;
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-size: 0.98rem;
+        }
+
+        .video-wrap {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid var(--border);
+        }
+
+        video {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            object-fit: cover;
+        }
+
+        .live-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .live-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--red);
+            box-shadow: 0 0 12px var(--red);
+        }
+
+        #status-box {
+            padding: 22px;
+            border-radius: 20px;
+            transition: 0.3s ease;
+            border: 1px solid var(--border);
+        }
+
+        .status-clear {
+            background:
+                linear-gradient(135deg, rgba(34, 197, 94, 0.24), rgba(20, 83, 45, 0.5));
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.15);
+        }
+
+        .status-danger {
+            background:
+                linear-gradient(135deg, rgba(239, 68, 68, 0.28), rgba(127, 29, 29, 0.58));
+            box-shadow: 0 0 36px rgba(239, 68, 68, 0.2);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-error {
+            background:
+                linear-gradient(135deg, rgba(250, 204, 21, 0.24), rgba(113, 63, 18, 0.5));
+            box-shadow: 0 0 30px rgba(250, 204, 21, 0.15);
+        }
+
+        #label {
+            font-size: 1.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        #status-detail {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .control-card,
+        .detections-card {
+            background: var(--bg-card-strong);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .control-title,
+        .detections-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .control-title h2,
+        .detections-title h2 {
+            font-size: 1rem;
+            margin: 0;
+            color: #fff;
+        }
+
+        #threshold-value {
+            color: var(--blue);
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--blue);
+            cursor: pointer;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-top: 8px;
+        }
+
+        #detections-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .detection-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detection-name {
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .confidence-wrap {
+            min-width: 110px;
+            text-align: right;
+        }
+
+        .confidence-number {
+            font-weight: 800;
+            color: var(--yellow);
+            margin-bottom: 6px;
+        }
+
+        .confidence-bar {
+            width: 110px;
+            height: 7px;
+            border-radius: 99px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--yellow), var(--red));
+            transition: width 0.2s ease;
+        }
+
+        .meta-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .meta-box {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.015);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .side-panel {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .container {
+                padding: 18px 12px;
+            }
+
+            .camera-panel,
+            .side-panel {
+                padding: 16px;
+            }
+
+            #label {
+                font-size: 1.35rem;
+            }
+
+            .meta-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <main class="dashboard">
+
+            <section class="panel camera-panel">
+
+                <div class="header">
+                    <div class="eyebrow">Sistem AI de Siguranță</div>
+
+                    <h1>Sistem de Monitorizare pentru Siguranță</h1>
+
+                    <div class="subtitle">
+                        Detectare live pentru foarfecă, cuțit, armă și ciocan.
+                    </div>
+                </div>
+
+                <div class="video-wrap">
+                    <video id="webcam" autoplay playsinline muted></video>
+
+                    <div class="live-badge">
+                        <span class="live-dot"></span>
+                        ACTIV
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel side-panel">
+
+                <div id="status-box" class="status-clear">
+                    <div id="label">Scanare...</div>
+                    <div id="status-detail">Se așteaptă semnalul camerei.</div>
+                </div>
+
+                <div class="control-card">
+                    <div class="control-title">
+                        <h2>Prag de Încredere</h2>
+                        <span id="threshold-value">30%</span>
+                    </div>
+
+                    <input
+                        id="threshold-slider"
+                        type="range"
+                        min="0.05"
+                        max="0.95"
+                        step="0.01"
+                        value="0.30"
+                    >
+
+                    <div class="slider-labels">
+                        <span>Mai sensibil</span>
+                        <span>Mai precis</span>
+                    </div>
+                </div>
+
+                <div class="meta-row">
+                    <div class="meta-box">
+                        <div class="meta-label">Prag Curent</div>
+                        <div id="meta-threshold" class="meta-value">30%</div>
+                    </div>
+
+                    <div class="meta-box">
+                        <div class="meta-label">Detecții</div>
+                        <div id="meta-count" class="meta-value">0</div>
+                    </div>
+                </div>
+
+                <div class="detections-card">
+                    <div class="detections-title">
+                        <h2>Obiecte Detectate</h2>
+                    </div>
+
+                    <div id="detections-list">
+                        <div class="empty-state">
+                            Niciun obiect detectat momentan.
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+        </main>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const statusBox = document.getElementById('status-box');
+        const labelText = document.getElementById('label');
+        const statusDetail = document.getElementById('status-detail');
+
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdValue = document.getElementById('threshold-value');
+        const metaThreshold = document.getElementById('meta-threshold');
+        const metaCount = document.getElementById('meta-count');
+        const detectionsList = document.getElementById('detections-list');
+
+        let isProcessing = false;
+
+        function formatPercent(value) {
+            return Math.round(parseFloat(value) * 100) + "%";
+        }
+
+        function updateThresholdUI() {
+            const percentage = formatPercent(thresholdSlider.value);
+            thresholdValue.innerText = percentage;
+            metaThreshold.innerText = percentage;
+        }
+
+        thresholdSlider.addEventListener('input', updateThresholdUI);
+        updateThresholdUI();
+
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment"
+                    },
+                    audio: false
+                });
+
+                video.srcObject = stream;
+
+                video.onloadedmetadata = () => {
+                    setTimeout(sendFrame, 1000);
+                };
+
+            } catch (error) {
+
+                statusBox.className = "status-error";
+
+                labelText.innerText = "Eroare Cameră";
+
+                statusDetail.innerText = "Camera nu poate fi accesată.";
+
+                console.error(error);
+            }
+        }
+
+        function renderDetections(detections) {
+
+            detectionsList.innerHTML = "";
+
+            if (!detections || detections.length === 0) {
+
+                detectionsList.innerHTML = `
+                    <div class="empty-state">
+                        Nu au fost detectate obiecte periculoase.
+                    </div>
+                `;
+
+                return;
+            }
+
+            detections.forEach(item => {
+
+                const confidencePercent = Math.round(item.confidence * 100);
+
+                const detectionEl = document.createElement("div");
+
+                detectionEl.className = "detection-item";
+
+                detectionEl.innerHTML = `
+                    <div class="detection-name">${item.label}</div>
+
+                    <div class="confidence-wrap">
+                        <div class="confidence-number">${confidencePercent}%</div>
+
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
+                        </div>
+                    </div>
+                `;
+
+                detectionsList.appendChild(detectionEl);
+            });
+        }
+
+        async function sendFrame() {
+
+            if (isProcessing) {
+                requestAnimationFrame(sendFrame);
+                return;
+            }
+
+            if (!video.videoWidth || !video.videoHeight) {
+                requestAnimationFrame(sendFrame);
+                return;
+            }
+
+            isProcessing = true;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+
+                const fd = new FormData();
+
+                fd.append('image', blob, 'frame.jpg');
+                fd.append('threshold', thresholdSlider.value);
+
+                try {
+
+                    const resp = await fetch('/detect', {
+                        method: 'POST',
+                        body: fd
+                    });
+
+                    const data = await resp.json();
+
+                    if (!resp.ok || data.detected.includes("error")) {
+
+                        statusBox.className = "status-error";
+
+                        labelText.innerText = "Eroare Detectare";
+
+                        statusDetail.innerText = data.msg || "A apărut o eroare.";
+
+                        metaCount.innerText = "0";
+
+                        renderDetections([]);
+
+                    } else if (data.detected.includes("clear")) {
+
+                        statusBox.className = "status-clear";
+
+                        labelText.innerText = "Status: SIGUR";
+
+                        statusDetail.innerText =
+                            "Niciun obiect detectat peste pragul selectat.";
+
+                        metaCount.innerText = "0";
+
+                        renderDetections([]);
+
+                    } else {
+
+                        statusBox.className = "status-danger";
+
+                        labelText.innerText = "Obiect Detectat";
+
+                        statusDetail.innerText = data.detected.join(', ');
+
+                        metaCount.innerText = data.detections.length;
+
+                        renderDetections(data.detections);
+                    }
+
+                } catch (e) {
+
+                    statusBox.className = "status-error";
+
+                    labelText.innerText = "Conexiune Pierdută";
+
+                    statusDetail.innerText =
+                        "Serverul de detectare nu poate fi accesat.";
+
+                    metaCount.innerText = "0";
+
+                    renderDetections([]);
+
+                    console.error(e);
+                }
+
+                isProcessing = false;
+
+                requestAnimationFrame(sendFrame);
+
+            }, 'image/jpeg', 0.6);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

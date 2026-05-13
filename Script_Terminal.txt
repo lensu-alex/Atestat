@@ -1,0 +1,23 @@
+# 1. GO TO YOUR PROJECT FOLDER
+cd "C:\Weapon Detector - Atestat"
+
+# 2. (RE)CREATE THE VIRTUAL ENVIRONMENT
+# If you have an old venv, delete it first: rm -r venv
+python -m venv venv
+
+# 3. ACTIVATE THE ENVIRONMENT
+# If you get a 'SecurityError', run: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\venv\Scripts\activate
+
+# 4. UPGRADE PIP
+python -m pip install --upgrade pip
+
+# 5. INSTALL CUDA-ENABLED PYTORCH (CRITICAL FOR GPU)
+# This downloads about 2GB of data. 
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# 6. INSTALL THE REST OF THE REQUIREMENTS
+pip install -r requirements.txt
+
+# 7. RUN THE PROGRAM
+python app.py
